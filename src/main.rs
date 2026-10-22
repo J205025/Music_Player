@@ -3,7 +3,7 @@
 use iced::widget::{
     button, column, container, row, scrollable, slider, space, text,
 };
-use iced::{Center, Element, Fill, Length, Subscription, Task, Theme};
+use iced::{Border, Center, Color, Element, Fill, Length, Subscription, Task, Theme};
 use rfd::AsyncFileDialog;
 use rodio::{Decoder, DeviceSinkBuilder, MixerDeviceSink, Player, Source};
 use std::fs::File;
@@ -196,6 +196,132 @@ impl MusicPlayer {
             Theme::TokyoNight
         } else {
             Theme::Light
+        }
+    }
+
+    /// 第一列控制按鈕（-5s、上一首、下一首、停止、+5s）的高對比樣式，確保在暗色與亮色主題下皆清晰易讀
+    fn transport_button_style(theme: &Theme, status: button::Status) -> button::Style {
+        let is_dark = theme.extended_palette().is_dark;
+        let (bg, text_color, border_color) = if is_dark {
+            match status {
+                button::Status::Active => (
+                    Color::from_rgb8(59, 66, 97),
+                    Color::from_rgb8(245, 247, 255),
+                    Color::from_rgb8(115, 128, 178),
+                ),
+                button::Status::Hovered => (
+                    Color::from_rgb8(78, 88, 128),
+                    Color::WHITE,
+                    Color::from_rgb8(148, 163, 218),
+                ),
+                button::Status::Pressed => (
+                    Color::from_rgb8(46, 52, 78),
+                    Color::WHITE,
+                    Color::from_rgb8(115, 128, 178),
+                ),
+                button::Status::Disabled => (
+                    Color::from_rgb8(42, 46, 66),
+                    Color::from_rgb8(158, 166, 196),
+                    Color::from_rgb8(68, 75, 105),
+                ),
+            }
+        } else {
+            match status {
+                button::Status::Active => (
+                    Color::from_rgb8(232, 238, 249),
+                    Color::from_rgb8(20, 28, 46),
+                    Color::from_rgb8(145, 162, 192),
+                ),
+                button::Status::Hovered => (
+                    Color::from_rgb8(212, 224, 245),
+                    Color::from_rgb8(10, 16, 30),
+                    Color::from_rgb8(105, 128, 168),
+                ),
+                button::Status::Pressed => (
+                    Color::from_rgb8(194, 210, 238),
+                    Color::from_rgb8(10, 16, 30),
+                    Color::from_rgb8(105, 128, 168),
+                ),
+                button::Status::Disabled => (
+                    Color::from_rgb8(236, 240, 246),
+                    Color::from_rgb8(96, 108, 128),
+                    Color::from_rgb8(195, 205, 220),
+                ),
+            }
+        };
+
+        button::Style {
+            background: Some(bg.into()),
+            text_color,
+            border: Border {
+                color: border_color,
+                width: 1.5,
+                radius: 8.0.into(),
+            },
+            ..button::Style::default()
+        }
+    }
+
+    /// 播放 / 暫停主按鈕的高對比樣式，在暗色與亮色主題下提供醒目的按鈕底色與清晰文字
+    fn play_button_style(theme: &Theme, status: button::Status) -> button::Style {
+        let is_dark = theme.extended_palette().is_dark;
+        let (bg, text_color, border_color) = if is_dark {
+            match status {
+                button::Status::Active => (
+                    Color::from_rgb8(56, 116, 224),
+                    Color::WHITE,
+                    Color::from_rgb8(116, 168, 255),
+                ),
+                button::Status::Hovered => (
+                    Color::from_rgb8(76, 136, 245),
+                    Color::WHITE,
+                    Color::from_rgb8(148, 192, 255),
+                ),
+                button::Status::Pressed => (
+                    Color::from_rgb8(42, 96, 196),
+                    Color::WHITE,
+                    Color::from_rgb8(116, 168, 255),
+                ),
+                button::Status::Disabled => (
+                    Color::from_rgb8(48, 66, 104),
+                    Color::from_rgb8(178, 194, 226),
+                    Color::from_rgb8(82, 106, 152),
+                ),
+            }
+        } else {
+            match status {
+                button::Status::Active => (
+                    Color::from_rgb8(32, 92, 204),
+                    Color::WHITE,
+                    Color::from_rgb8(20, 68, 160),
+                ),
+                button::Status::Hovered => (
+                    Color::from_rgb8(48, 110, 224),
+                    Color::WHITE,
+                    Color::from_rgb8(24, 80, 180),
+                ),
+                button::Status::Pressed => (
+                    Color::from_rgb8(24, 74, 172),
+                    Color::WHITE,
+                    Color::from_rgb8(20, 68, 160),
+                ),
+                button::Status::Disabled => (
+                    Color::from_rgb8(186, 206, 240),
+                    Color::from_rgb8(44, 68, 112),
+                    Color::from_rgb8(146, 172, 218),
+                ),
+            }
+        };
+
+        button::Style {
+            background: Some(bg.into()),
+            text_color,
+            border: Border {
+                color: border_color,
+                width: 1.5,
+                radius: 8.0.into(),
+            },
+            ..button::Style::default()
         }
     }
 
@@ -837,7 +963,9 @@ impl MusicPlayer {
             self.state == PlaybackState::Playing || self.state == PlaybackState::Paused;
 
         let rewind_btn = {
-            let b = button("⏪ -5s").padding([8, 14]);
+            let b = button(text("⏪ -5s").size(16))
+                .padding([10, 18])
+                .style(Self::transport_button_style);
             if can_seek {
                 b.on_press(Message::SeekRelative(-5))
             } else {
@@ -846,7 +974,9 @@ impl MusicPlayer {
         };
 
         let prev_btn = {
-            let b = button("⏮ 上一首").padding([8, 14]);
+            let b = button(text("⏮ 上一首").size(16))
+                .padding([10, 18])
+                .style(Self::transport_button_style);
             if can_control {
                 b.on_press(Message::PrevTrack)
             } else {
@@ -855,12 +985,14 @@ impl MusicPlayer {
         };
 
         let play_pause_btn = match self.state {
-            PlaybackState::Playing => button("⏸ 暫停")
-                .padding([8, 24])
-                .style(button::primary)
+            PlaybackState::Playing => button(text("⏸ 暫停").size(17))
+                .padding([10, 28])
+                .style(Self::play_button_style)
                 .on_press(Message::Pause),
             PlaybackState::Paused | PlaybackState::Stopped => {
-                let b = button("▶ 播放").padding([8, 24]).style(button::primary);
+                let b = button(text("▶ 播放").size(17))
+                    .padding([10, 28])
+                    .style(Self::play_button_style);
                 if can_control {
                     b.on_press(Message::Play)
                 } else {
@@ -870,7 +1002,9 @@ impl MusicPlayer {
         };
 
         let next_btn = {
-            let b = button("⏭ 下一首").padding([8, 14]);
+            let b = button(text("⏭ 下一首").size(16))
+                .padding([10, 18])
+                .style(Self::transport_button_style);
             if can_control {
                 b.on_press(Message::NextTrack)
             } else {
@@ -879,7 +1013,9 @@ impl MusicPlayer {
         };
 
         let stop_btn = {
-            let b = button("⏹ 停止").padding([8, 14]);
+            let b = button(text("⏹ 停止").size(16))
+                .padding([10, 18])
+                .style(Self::transport_button_style);
             if self.state != PlaybackState::Stopped {
                 b.on_press(Message::Stop)
             } else {
@@ -888,7 +1024,9 @@ impl MusicPlayer {
         };
 
         let forward_btn = {
-            let b = button("⏩ +5s").padding([8, 14]);
+            let b = button(text("⏩ +5s").size(16))
+                .padding([10, 18])
+                .style(Self::transport_button_style);
             if can_seek {
                 b.on_press(Message::SeekRelative(5))
             } else {
@@ -904,7 +1042,7 @@ impl MusicPlayer {
             stop_btn,
             forward_btn
         ]
-        .spacing(10)
+        .spacing(12)
         .align_y(Center);
 
         // 循環模式單一按鈕（按時依序切換 Normal -> 全部循環 -> 單曲循環）
