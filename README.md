@@ -59,20 +59,46 @@
   sudo apt install -y fonts-noto-cjk fonts-noto-color-emoji
   ```
 
+### 4. Windows 跨平台編譯需求（於 Linux 環境交叉編譯 `.exe`）
+若要在 Linux (Ubuntu / Debian) 環境下直接交叉編譯出供 Windows 執行的 `.exe` 執行檔，需安裝 `mingw-w64` 交叉編譯工具鏈與 Rust 的 Windows 目標平台：
+
+```bash
+# 1. 安裝 mingw-w64 交叉編譯器
+sudo apt update
+sudo apt install -y gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 binutils-mingw-w64-x86-64
+
+# 2. 新增 Rust 的 Windows GNU 目標平台
+rustup target add x86_64-pc-windows-gnu
+```
+（專案內已配置 `.cargo/config.toml` 指定 `x86_64-w64-mingw32-gcc` 作為連結器，且於 `src/main.rs` 設定 Release 模式下隱藏 Windows 背景命令列視窗。）
+
 ---
 
 ## 編譯與執行方式
 
-### 開發模式直接執行
+### 開發模式直接執行 (Linux)
 ```bash
 cargo run
 ```
 
-### 編譯 Release 最佳化版本並執行
+### 編譯 Linux Release 最佳化版本並執行
 ```bash
 cargo build --release
 ./target/release/Music_Player
 ```
+- 產出執行檔位置：`target/release/Music_Player`
+
+### 編譯 Windows Release 版本 (`.exe`)
+- **在 Linux 環境下交叉編譯 Windows 執行檔**：
+  ```bash
+  cargo build --release --target x86_64-pc-windows-gnu
+  ```
+  - 產出執行檔位置：`target/x86_64-pc-windows-gnu/release/Music_Player.exe`（可獨立複製至 Windows 10/11 64位元系統直接點擊執行，無須額外安裝 DLL）。
+- **在 Windows 原生環境下直接編譯**：
+  ```powershell
+  cargo build --release
+  ```
+  - 產出執行檔位置：`target\release\Music_Player.exe`
 
 ### 執行單元測試
 ```bash
